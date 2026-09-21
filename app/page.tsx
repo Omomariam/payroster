@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Check, ExternalLink, Menu, ShieldCheck, WalletCards, X } from "lucide-react";
+import { ArrowRight, Check, ExternalLink, LogOut, Menu, ShieldCheck, WalletCards, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Brand } from "@/components/brand";
@@ -9,13 +9,16 @@ import { useWallet } from "@/components/wallet-provider";
 import { CONTRACT_ADDRESS, explorerAddress } from "@/lib/chain";
 
 export default function LandingPage() {
-  const { account, connect, connecting, error } = useWallet();
+  const { account, connect, connecting, disconnect, error } = useWallet();
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
 
-  async function enterApp() {
-    const connected = account || await connect();
-    if (connected) router.push("/app");
+  async function primaryAction() {
+    if (account) {
+      router.push("/app");
+      return;
+    }
+    await connect();
   }
 
   return (
@@ -27,8 +30,8 @@ export default function LandingPage() {
           <button className="nav-close" onClick={() => setMenuOpen(false)} aria-label="Close menu"><X /></button>
         </div>
         <div className="landing-actions">
-          <button className="button button-ghost" onClick={enterApp}>{account ? "Open app" : "Sign in"}</button>
-          <button className="button button-primary" onClick={enterApp} disabled={connecting}>{connecting ? "Connecting…" : account ? "Dashboard" : "Connect wallet"}<ArrowRight size={16} /></button>
+          {account ? <button className="button button-ghost" onClick={disconnect}><LogOut size={16} />Disconnect</button> : null}
+          <button className="button button-primary" onClick={primaryAction} disabled={connecting}>{connecting ? "Connecting…" : account ? "Open app" : "Connect wallet"}<ArrowRight size={16} /></button>
           <button className="nav-menu" onClick={() => setMenuOpen(true)} aria-label="Open menu"><Menu /></button>
         </div>
       </nav>
@@ -39,8 +42,8 @@ export default function LandingPage() {
           <h1>Payroll that moves<br />at the speed of work.</h1>
           <p>Configure salaries, fund your treasury, and pay your entire team in a single on-chain transaction.</p>
           <div className="hero-actions">
-            <button className="button button-primary button-large" onClick={enterApp} disabled={connecting}><WalletCards size={18} />{connecting ? "Check your wallet" : "Connect wallet"}</button>
-            <a className="text-link" href="#product">See how it works <ArrowRight size={15} /></a>
+            <button className="button button-primary button-large" onClick={primaryAction} disabled={connecting}><WalletCards size={18} />{connecting ? "Check your wallet" : account ? "Open app" : "Connect wallet"}</button>
+            {account ? <button className="text-link disconnect-link" onClick={disconnect}><LogOut size={15} />Disconnect</button> : <a className="text-link" href="#product">See how it works <ArrowRight size={15} /></a>}
           </div>
           {error ? <p className="form-error" role="alert">{error}</p> : null}
           <div className="hero-proof"><span><Check /> No subscriptions</span><span><Check /> On-chain records</span><span><Check /> You control the funds</span></div>

@@ -33,10 +33,14 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     const ethereum = window.ethereum;
     if (!ethereum) return;
     const load = async () => {
+      if (window.localStorage.getItem("payroster_disconnected") === "true") return;
       const [accounts, chain] = await Promise.all([ethereum.request({ method: "eth_accounts" }), ethereum.request({ method: "eth_chainId" })]);
       setAccount(((accounts as string[])?.[0] || "")); setChainId(Number(chain));
     };
-    const accountsChanged = (...args: unknown[]) => setAccount((((args[0] as string[]) || [])[0] || ""));
+    const accountsChanged = (...args: unknown[]) => {
+      if (window.localStorage.getItem("payroster_disconnected") === "true") return;
+      setAccount((((args[0] as string[]) || [])[0] || ""));
+    };
     const chainChanged = (...args: unknown[]) => setChainId(Number(args[0]));
     load().catch(() => undefined);
     ethereum.on?.("accountsChanged", accountsChanged); ethereum.on?.("chainChanged", chainChanged);
@@ -50,12 +54,18 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     try {
       await ensureBotTestnet(window.ethereum);
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" }) as string[];
-      const nextAccount = accounts[0] || ""; setAccount(nextAccount); setChainId(BOT_TESTNET.chainId); return nextAccount;
+      const nextAccount = accounts[0] || "";
+      window.localStorage.removeItem("payroster_disconnected");
+      setAccount(nextAccount); setChainId(BOT_TESTNET.chainId); return nextAccount;
     } catch (caught) { setError(friendlyError(caught)); return ""; }
     finally { setConnecting(false); }
   }, []);
 
-  const value = useMemo<WalletState>(() => ({ account, chainId, connecting, error, connect, disconnect: () => setAccount(""), browserProvider: () => window.ethereum ? new BrowserProvider(window.ethereum) : null }), [account, chainId, connecting, error, connect]);
+  const disconnect = useCallback(() => {
+    window.localStorage.setItem("payroster_disconnected", "true");
+    setAccount(""); setChainId(null); setError("");
+  }, []);
+  const value = useMemo<WalletState>(() => ({ account, chainId, connecting, error, connect, disconnect, browserProvider: () => window.ethereum ? new BrowserProvider(window.ethereum) : null }), [account, chainId, connecting, error, connect, disconnect]);
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 }
 
