@@ -1,0 +1,20 @@
+node_modules/
+.next/
+out/
+.env*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.vercel/
+*.tsbuildinfo
+artifacts/
+cache/
+deployments/
+coverage/
+typechain-types/
+.agent-browser/
+Acunetix BOTChain Integration Guide.md
+Acunetix BOTChain Integration Guide.md
